@@ -1,0 +1,23 @@
+{
+  "name": "electron-quick-start",
+  "version": "1.0.0",
+  "description": "A minimal Electron application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": "https://github.com/InspAlgo/WEIBO_Project.git",
+  "keywords": [
+    "Electron",
+    "D3"
+  ],
+  "author": {
+    "name": "InspAlgo",
+    "email": "InspAlgo@gmail.com",
+    "url": "https://github.com/InspAlgo/"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^6.0.6"
+  }
+}

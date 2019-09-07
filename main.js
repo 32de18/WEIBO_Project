@@ -29,7 +29,7 @@ function createWindow() {
   mainWindow.loadFile('index.html')
 
   // Open the DevTools.
-  mainWindow.webContents.openDevTools()
+  // mainWindow.webContents.openDevTools()
 
   // Emitted when the window is closed.
   mainWindow.on('closed', function () {
@@ -85,3 +85,18 @@ app.on('activate', function () {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
+const ipc = require('electron').ipcMain
+
+let sub_3dlabel_win;
+ipc.on('sub_3dlabel', () => {
+  sub_3dlabel_win = new BrowserWindow({
+    width: 800,
+    height: 700,
+    frame: true,
+    parent: mainWindow, //win是主窗口
+    icon: './weizhi.ico'
+
+  })
+  sub_3dlabel_win.loadURL(path.join('file:', __dirname, 'sub_3dlabel.html')) //new.html是新开窗口的渲染进程
+  sub_3dlabel_win.on('closed', () => { sub_3dlabel_win = null })
+})

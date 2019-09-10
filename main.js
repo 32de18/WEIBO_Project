@@ -29,7 +29,7 @@ function createWindow() {
   mainWindow.loadFile('index.html')
 
   // Open the DevTools.
-  // mainWindow.webContents.openDevTools()
+  mainWindow.webContents.openDevTools()
 
   // Emitted when the window is closed.
   mainWindow.on('closed', function () {
@@ -83,20 +83,69 @@ app.on('activate', function () {
   if (mainWindow === null) createWindow()
 })
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+// 通信模块
 const ipc = require('electron').ipcMain
 
-let sub_3dlabel_win;
-ipc.on('sub_3dlabel', () => {
-  sub_3dlabel_win = new BrowserWindow({
-    width: 800,
-    height: 700,
-    frame: true,
-    parent: mainWindow, //win是主窗口
-    icon: './weizhi.ico'
+/**
+ * 读取后端分析完成的数据
+ */
 
+ipc.on('read_result_data', (e, args) => {
+  var filepath = args
+  var readline = require('readline')
+  var fs = require('fs')
+
+  var objReadline = readline.createInterface({
+    input: fs.createReadStream(filepath)
   })
-  sub_3dlabel_win.loadURL(path.join('file:', __dirname, 'sub_3dlabel.html')) //new.html是新开窗口的渲染进程
-  sub_3dlabel_win.on('closed', () => { sub_3dlabel_win = null })
+
+  var mainWordArr = new Array()
+  var contextWordArr = new Array()
+  var summaryArr = new Array()
+  var hotValArr = new Array()
+
+  objReadline.on('line', (line) => {
+    res = line.split(',')
+    mainWordArr.push(res[0].split(' '))
+    var contextWordList = res[1].split(' ')
+    contextWordArr.push(contextWordList)
+    summaryArr.push(res[2])
+    hotValArr.push(parseFloat(res[3]))
+  })
+
+  objReadline.on('close', () => {
+    e.sender.send('load_data_completed')
+  })
+
+  global.resultData = {
+    mainWordArr: mainWordArr,
+    contextWordArr: contextWordArr,
+    summaryArr: summaryArr,
+    hotValArr: hotValArr
+  }
+})
+
+ipc.on('read_result_data_2', (e, args) => {
+  var filepath = args
+  var readline = require('readline')
+  var fs = require('fs')
+
+  var objReadline = readline.createInterface({
+    input: fs.createReadStream(filepath)
+  })
+
+  var correlationValArr = new Array()
+
+  objReadline.on('line', (line) => {
+    res = line.split(' ')
+    correlationValArr.push(res)
+  })
+
+  objReadline.on('close', () => {
+    e.sender.send('load_data_completed')
+  })
+
+  global.resultData2 = {
+    correlationValArr: correlationValArr
+  }
 })

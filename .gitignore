@@ -1,1 +1,10 @@
 node_modules
+py3.6+/Configuration
+py3.6+/data
+py3.6+/DataProcess/__pycache__
+py3.6+/DetectHotspots/__pycache__
+py3.6+/HotspotsAnalysis/__pycache__
+files
+font
+img
+js/d3.min.js

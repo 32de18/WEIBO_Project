@@ -2,30 +2,314 @@
 <html>
 
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <title>微知</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>微知</title>
+    <link type="text/css" rel="stylesheet" href="./css/index.css" />
+    <link type="text/css" rel="stylesheet" href="./css/Bubble.css" />
+    <script src="./js/Bubble.js"></script>
+    <script src="./js/d3.min.js"></script>
 </head>
 
 <body>
+    <div class="main-container">
+        <div class="main-menu">
+            <div class="button-pos">
+                <button onclick="LoadOriginalData()">加载原始数据</button>
+            </div>
 
-  <div>
-    <input type="text" id="message" name="" value="">
-    <button onclick="runExec()">Run Py</button>
-  </div>
+            <div class="button-pos">
+                <button onclick="ReadResultData(1)">加载处理结果数据1</button>
+                <button onclick="CreateSubWin()">数据展示1</button>
+            </div>
 
-  <div>
-    <button onclick="CreateSubWin()">Create Sub </button>
-  </div>
+            <div class="button-pos">
+                <button onclick="ReadResultData(2)">加载处理结果数据2</button>
+                <button onclick="ShowRealation(0, 2)">数据展示2</button>
+            </div>
 
-  <script>
-    const ipc = require('electron').ipcRenderer
-    function CreateSubWin() {
-      ipc.send('sub_3dlabel')
-    }
-  </script>
+            <div class="button-pos">
+            </div>
 
-  <!-- You can also require other files to run in this process -->
-  <script src="renderer.js"></script>
+            <div class="button-pos">
+                <button onclick="OnceProcess()">一键处理</button>
+            </div>
+
+            <div class="button-pos">
+                <div class="input-date-pos">
+                    <div class="input-date-row">
+                        <span style="font-family: WT_BUTTON;margin-left: 10px;">开始</span>
+                        <input type="date" class="input-date" id="InputStartTime" name="开始时间" value="2017-01-01"
+                            min="2017-01-01" max="2017-04-20">
+                    </div>
+                    <div class="input-date-row">
+                        <span style="font-family: WT_BUTTON;margin-left: 10px;">结束</span>
+                        <input type="date" class="input-date" id="InputEndTime" name="结束时间" value="2017-04-20"
+                            min="2017-01-01" max="2017-04-20">
+                    </div>
+                </div>
+
+                <button onclick="SelectTime()">确定时间</button>
+            </div>
+
+            <div class="index-textarea">
+                <textarea id="showMessage" readonly="readonly">
+
+                </textarea>
+            </div>
+
+        </div>
+        <div class="main-drawing">
+            <div id="3DLabel" class="wrapper" style="display: none;">
+                <div class="tagcloud">
+                    <!-- bo大小 01-04 co颜色 01-07 -->
+                </div>
+            </div>
+
+            <svg id="Real" height="680" width="900" style="display: none; "></svg>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('showMessage').value = ''
+    </script>
+
+    <script>
+        function CreateSubWin() {
+            document.getElementById('Real').innerHTML = ''
+            document.getElementById('Real').style = 'display: none;z-index:9;'
+            var displayState = document.getElementById('3DLabel').style.display
+            if (displayState === 'block') {
+                document.getElementById('3DLabel').innerHTML = '<div class="tagcloud"></div>'
+                document.getElementById('3DLabel').style.display = 'none'
+                return
+            }
+
+            document.getElementById('3DLabel').style.display = 'block'
+            var tagcloudDiv = document.getElementsByClassName('tagcloud')[0]
+            var resultData = require('electron').remote.getGlobal('resultData')
+            var eventNum = resultData.hotValArr.length
+
+            for (var i = 0; i < eventNum; i++) {
+                var a = document.createElement('a')
+                a.id = 'word' + i.toString()
+                var weight = resultData.hotValArr[i]
+                if (weight >= 0.75)
+                    weight = 1
+                else if (weight >= 0.5)
+                    weight = 2
+                else if (weight >= 0.25)
+                    weight = 3
+                else
+                    weight = 4
+                a.className = ('b0' + weight.toString()) + (' co0' + (i % 7 + 1).toString())
+                a.href = 'javascript:ShowRealation(' + i.toString() + ',1);'
+                text = ''
+                resultData.mainWordArr[i].forEach(element => {
+                    text += element + ' '
+                })
+                a.innerText = text
+                tagcloudDiv.appendChild(a)
+            }
+
+            /*3D标签云*/
+            tagcloud({
+                selector: ".tagcloud",  //元素选择器
+                fontsize: 16,       //基本字体大小, 单位px
+                radius: 140,         //滚动半径, 单位px 页面宽度和高度的五分之一
+                mspeed: "normal",   //滚动最大速度, 取值: slow, normal(默认), fast
+                ispeed: "fast",   //滚动初速度, 取值: slow, normal(默认), fast
+                direction: 135,     //初始滚动方向, 取值角度(顺时针360): 0对应top, 90对应left, 135对应right-bottom(默认)...
+                keep: false          //鼠标移出组件后是否继续随鼠标滚动, 取值: false, true(默认) 对应 减速至初速度滚动, 随鼠标滚动
+            })
+        }
+
+    </script>
+
+    <script>
+        function ShowRealation(idx, code) {
+            document.getElementById('3DLabel').innerHTML = '<div class="tagcloud"></div>'
+            document.getElementById('3DLabel').style.display = 'none'
+
+            document.getElementById('Real').innerHTML = ''
+            document.getElementById('Real').style.display = 'block'
+
+            var nodes = []
+            var edges = []
+
+            if (code == 1) {
+                var resultData = require('electron').remote.getGlobal('resultData')
+                var edgeCount = 1
+                nodes.push({ name: resultData.summaryArr[idx], value: 3 })
+                resultData.mainWordArr[idx].forEach(element => {
+                    nodes.push({ name: element, value: 2 })
+                    edges.push({ source: 0, target: edgeCount, relation: "", value: 1 })
+                    edgeCount += 1
+                })
+                resultData.contextWordArr[idx].forEach(element => {
+                    nodes.push({ name: element, value: 1.5 })
+                    edges.push({ source: 0, target: edgeCount, relation: "", value: 2 })
+                    edgeCount += 1
+                })
+            }
+
+            if (code == 2) {
+                var resultData2 = require('electron').remote.getGlobal('resultData2')
+                var hotNum = resultData2.correlationValArr.length
+                for (var i = 0; i < hotNum; i += 1) {
+                    var count = 0
+                    nodes.push({ name: i, value: 2.5 })
+                    resultData2.correlationValArr[i].forEach(element => {
+                        edges.push({ source: i, target: count, relation: element, value: 0, value2: element })
+                        count += 1
+                    })
+                }
+            }
+
+
+            var marge = { top: 10, bottom: 10, left: 10, right: 10 }
+            var svg = d3.select("svg")
+            var width = svg.attr("width")
+            var height = svg.attr("height")
+            var g = svg.append("g")
+                .attr("transform", "translate(" + marge.top + "," + marge.left + ")");
+
+
+            //设置一个color的颜色比例尺，为了让不同的扇形呈现不同的颜色
+            var colorScale = d3.scaleOrdinal()
+                .domain(d3.range(nodes.length))
+                .range(d3.schemeCategory10);
+
+            //新建一个力导向图
+            var forceSimulation = d3.forceSimulation()
+                .force("link", d3.forceLink())
+                .force("charge", d3.forceManyBody())
+                .force("center", d3.forceCenter());;
+
+            //初始化力导向图，也就是传入数据
+            //生成节点数据
+            forceSimulation.nodes(nodes)
+                .on("tick", ticked)  // 这个函数很重要，后面给出具体实现和说明
+
+            // 生成边数据
+            forceSimulation.force("link")
+                .links(edges)
+                .distance(function (d) {//每一边的长度
+                    if (d.value != 0)
+                        return d.value * 100;
+                    else {
+                        return (1 - d.value2) * 600
+                    }
+                })
+
+            //设置图形的中心位置	
+            forceSimulation.force("center")
+                .x(width / 2)
+                .y(height / 2)
+
+            //有了节点和边的数据后，我们开始绘制
+            //绘制边
+            var links = g.append("g")
+                .selectAll("line")
+                .data(edges)
+                .enter()
+                .append("line")
+                .attr("stroke", "rgb(150, 139, 139)")
+                .attr("stroke-width", function (d) {
+                    if (d.value == 0) {
+                        return d.value2 * 10
+                    }
+                    else
+                        return 2
+                });
+
+            var linksText = g.append("g")
+                .selectAll("text")
+                .data(edges)
+                .enter()
+                .append("text")
+                .text(function (d) {
+                    if (d.relation - 0.0 > 0.001)
+                        return d.relation
+                    else
+                        return ''
+                })
+
+            // 绘制节点
+            // 为节点和节点上的文字分组
+            var gs = g.selectAll(".circleText")
+                .data(nodes)
+                .enter()
+                .append("g")
+                .attr("transform", function (d, i) {
+                    var cirX = d.x;
+                    var cirY = d.y;
+                    return "translate(" + cirX + "," + cirY + ")";
+                })
+                .call(d3.drag()
+                    .on("start", started)
+                    .on("drag", dragged)
+                    .on("end", ended)
+                );
+
+            //绘制节点
+            gs.append("circle")
+                .attr("r", function (d) {
+                    return 10 * d.value  // 节点大小
+                })
+                .attr("fill", function (d, i) {
+                    return colorScale(i);
+                })
+
+            //文字
+            gs.append("text")
+                .attr("x", -10)
+                .attr("y", -20)
+                .attr("dy", 10)
+                .text(function (d) {
+                    return d.name;
+                })
+
+            function ticked() {
+                links
+                    .attr("x1", function (d) { return d.source.x; })
+                    .attr("y1", function (d) { return d.source.y; })
+                    .attr("x2", function (d) { return d.target.x; })
+                    .attr("y2", function (d) { return d.target.y; });
+
+                linksText
+                    .attr("x", function (d) {
+                        return (d.source.x + d.target.x) / 2;
+                    })
+                    .attr("y", function (d) {
+                        return (d.source.y + d.target.y) / 2;
+                    });
+
+                gs
+                    .attr("transform", function (d) { return "translate(" + d.x + "," + d.y + ")"; });
+            }
+            function started(d) {
+                if (!d3.event.active) {
+                    forceSimulation.alphaTarget(0.8).restart();
+                }
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+            function dragged(d) {
+                d.fx = d3.event.x;
+                d.fy = d3.event.y;
+            }
+            function ended(d) {
+                if (!d3.event.active) {
+                    forceSimulation.alphaTarget(0);
+                }
+                d.fx = null;
+                d.fy = null;
+            }
+        }
+    </script>
+
+    <!-- You can also require other files to run in this process -->
+    <script src="renderer.js"></script>
 </body>
 
 </html>

@@ -50,6 +50,8 @@ def main():
 
     # 相关性分析
     CorrelationAnalysis.generate_correlation_matrics(hotspots_filepath, correlation_filepath)
+    
+    print("CODE_0")
 
 
 

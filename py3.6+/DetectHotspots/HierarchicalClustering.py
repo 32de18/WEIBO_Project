@@ -117,7 +117,7 @@ def hierarchical_clustering(sensitive_word_list, scale=100, topics_ratio=1.5, pa
 		#   聚类
 		z = sch.linkage(dismat, method='single')
 		clu = sch.fcluster(z, t=threshold, criterion='distance')
-		heat.append([clu.count(i) for i in range(1, clu.max()+1)])
+		heat.append([list(clu).count(i) for i in range(1, clu.max()+1)])
 		cluster.append(clu)
 	return cluster, heat
 

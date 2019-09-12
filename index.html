@@ -15,22 +15,6 @@
         <div class="main-menu">
             <div class="button-pos">
                 <button onclick="LoadOriginalData()">加载原始数据</button>
-            </div>
-
-            <div class="button-pos">
-                <button onclick="ReadResultData(1)">加载处理结果数据1</button>
-                <button onclick="CreateSubWin()">数据展示1</button>
-            </div>
-
-            <div class="button-pos">
-                <button onclick="ReadResultData(2)">加载处理结果数据2</button>
-                <button onclick="ShowRealation(0, 2)">数据展示2</button>
-            </div>
-
-            <div class="button-pos">
-            </div>
-
-            <div class="button-pos">
                 <button onclick="OnceProcess()">一键处理</button>
             </div>
 
@@ -49,6 +33,21 @@
                 </div>
 
                 <button onclick="SelectTime()">确定时间</button>
+            </div>
+
+            <div class="button-pos">
+                <button onclick="SaveData(1)">选择保存数据1位置</button>
+                <button onclick="SaveData(2)">选择保存数据2位置</button>
+            </div>
+
+            <div class="button-pos">
+                <button onclick="ReadResultData(1)">加载处理结果数据1</button>
+                <button onclick="CreateSubWin()">数据展示1</button>
+            </div>
+
+            <div class="button-pos">
+                <button onclick="ReadResultData(2)">加载处理结果数据2</button>
+                <button onclick="ShowRealation(0, 2)">数据展示2</button>
             </div>
 
             <div class="index-textarea">
@@ -88,11 +87,15 @@
             var tagcloudDiv = document.getElementsByClassName('tagcloud')[0]
             var resultData = require('electron').remote.getGlobal('resultData')
             var eventNum = resultData.hotValArr.length
+            var hotValSum = 0.0
+            resultData.hotValArr.forEach(element => {
+                hotValSum += element
+            })
 
             for (var i = 0; i < eventNum; i++) {
                 var a = document.createElement('a')
                 a.id = 'word' + i.toString()
-                var weight = resultData.hotValArr[i]
+                var weight = resultData.hotValArr[i] / hotValSum
                 if (weight >= 0.75)
                     weight = 1
                 else if (weight >= 0.5)
@@ -103,7 +106,7 @@
                     weight = 4
                 a.className = ('b0' + weight.toString()) + (' co0' + (i % 7 + 1).toString())
                 a.href = 'javascript:ShowRealation(' + i.toString() + ',1);'
-                text = ''
+                text = i.toString() + '.'
                 resultData.mainWordArr[i].forEach(element => {
                     text += element + ' '
                 })
@@ -139,7 +142,8 @@
             if (code == 1) {
                 var resultData = require('electron').remote.getGlobal('resultData')
                 var edgeCount = 1
-                nodes.push({ name: resultData.summaryArr[idx], value: 3 })
+                nodes.push({ name: '', value: 3 })
+                printLog(resultData.summaryArr[idx])
                 resultData.mainWordArr[idx].forEach(element => {
                     nodes.push({ name: element, value: 2 })
                     edges.push({ source: 0, target: edgeCount, relation: "", value: 1 })
@@ -159,7 +163,7 @@
                     var count = 0
                     nodes.push({ name: i, value: 2.5 })
                     resultData2.correlationValArr[i].forEach(element => {
-                        edges.push({ source: i, target: count, relation: element, value: 0, value2: element })
+                        edges.push({ source: i, target: count, relation: element, value: 0, value2: parseFloat(element) })
                         count += 1
                     })
                 }

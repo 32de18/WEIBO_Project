@@ -14,22 +14,21 @@ console.log = (message) => {
         message = message.slice(0, -1)
     showMessage.value = showMessage.value + message + '\n'
 }
+console.error = (message) => {
+    while (message.slice(-1) == '\n' || message.slice(-1) == '\r')
+        message = message.slice(0, -1)
+    showMessage.value = showMessage.value + "Error: " + message + '\n'
+}
 
-function CheckChinesePrint() {
-    var cmdStr = 'python D:/Users/huoji/Desktop/test.py'
-    var workerProcess
-    workerProcess = exec(cmdStr, { encoding: 'binary' })
-
-    workerProcess.stdout.on('data', function (data) {
-        console.log(iconv.decode(data, 'cp936'))
-    })
-    workerProcess.stderr.on('data', function (data) {
-        console.log(iconv.decode(data, 'cp936'))
-    })
-
-    workerProcess.on('close', function (code) {
-        workerProcess.kill()
-    })
+function printLog(message) {
+    while (message.slice(-1) == '\n' || message.slice(-1) == '\r')
+        message = message.slice(0, -1)
+    showMessage.value = showMessage.value + message + '\n'
+}
+function printError(message) {
+    while (message.slice(-1) == '\n' || message.slice(-1) == '\r')
+        message = message.slice(0, -1)
+    showMessage.value = showMessage.value + "Error: " + message + '\n'
 }
 
 /**
@@ -96,14 +95,37 @@ function SelectTime() {
     dialog.showMessageBox({ type: 'info', title: '消息', message: '开始时间：' + selStTime + '\n结束时间：' + selEdTime })
 }
 
+
+var hotspots_filepath = ''
+var correlation_filepath = ''
+
+function SaveData(code) {
+    dialog.showSaveDialog({
+        filters: [
+            { name: 'CSV', extensions: ['csv'] },
+            { name: 'TEXT', extensions: ['txt'] },
+            { name: 'FFSS', extensions: ['ffss'] }
+        ]
+    }).then(result => {
+        if (!result.canceled && result.filePath != null && result.filePath != '') {
+            if (code == 1) {
+                hotspots_filepath = result.filePath
+                printLog("SaveData1: " + hotspots_filepath)
+            }
+            if (code == 2) {
+                correlation_filepath = result.filePath
+                printLog("SaveData2: " + correlation_filepath)
+            }
+        }
+    }).catch(err => {
+        dialog.showErrorBox('', err)
+    })
+}
+
 /**
  * 一键处理
  */
-var hotspots_filepath = 'D:/WorkData/WEIBO_Project/py3.6+/data/hotspots_file_test.csv'
-var correlation_filepath = 'D:/WorkData/WEIBO_Project/py3.6+/data/correlation_file_test.csv'
 function OnceProcess() {
-    // 判断程序是否正在运行
-
     // 文件路径检查
     if (!CheckFilepath(originalDatapath)) {
         dialog.showErrorBox('', '文件路径错误!')
@@ -129,16 +151,15 @@ function OnceProcess() {
 
     workerProcess.stdout.on('data', function (data) {
         data = iconv.decode(data, 'cp936')
-        console.log(data)
+        printLog(data)
         if (data == 'CODE_0') {
             dialog.showMessageBox({ type: 'info', title: '消息', message: '数据处理完成！' })
         }
     })
     workerProcess.stderr.on('data', function (data) {
-        console.log(iconv.decode(data, 'cp936'))
+        printLog(iconv.decode(data, 'cp936'))
     })
     workerProcess.on('close', function (code) {
-        workerProcess.kill()
     })
 }
 
@@ -146,23 +167,21 @@ function OnceProcess() {
  * 文件路径检查
  * 判断此路径是否存在文件
  */
-async function CheckFilepath(filepath) {
+function CheckFilepath(filepath) {
     if (filepath == null || filepath == '')
         return false
 
     var fs = require('fs')
 
     // 检查当前目录中是否存在该文件，以及该文件是否可读。
-    await fs.access(filepath, fs.constants.F_OK | fs.constants.R_OK, (err) => {
-        if (err) {
-            console.error(
-                `${filepath} ${err.code === 'ENOENT' ? '不存在' : '存在但不可读'}`)
-            return false
-        } else {
-            console.log(`${filepath} 存在，且它是可读的`)
-            return true
-        }
-    })
+    try {
+        fs.accessSync(filepath, fs.constants.F_OK | fs.constants.R_OK);
+        printLog(`${filepath} 存在，且它是可读的`)
+        return true
+    } catch (err) {
+        printError(`${filepath} ${err.code === 'ENOENT' ? '不存在' : '只可写'}`)
+        return false
+    }
 }
 
 /**

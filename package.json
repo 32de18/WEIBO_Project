@@ -4,7 +4,8 @@
   "description": "A minimal Electron application",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist-win": "electron-packager . weizhi --win --out weizhi_release --arch=x64 --overwrite --ignore=files/ --ignore='./py3.6+/data/' --icon=weizhi.ico"
   },
   "repository": "https://github.com/InspAlgo/WEIBO_Project.git",
   "keywords": [
@@ -19,5 +20,14 @@
   "license": "MIT",
   "devDependencies": {
     "electron": "^6.0.6"
-  }
+  },
+  "build": {
+    "appId": "weizhi",
+    "win": {
+      "icon": "./weizhi.ico"
+    },
+    "icon": "./weizhi.ico",
+    "iconUrl": "./weizhi.ico"
+  },
+  "postinstall": "electron-builder install-app-deps"
 }

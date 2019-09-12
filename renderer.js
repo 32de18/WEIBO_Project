@@ -66,8 +66,15 @@ function LoadOriginalData() {
             })
 
             objReadline.on('close', () => {
-                document.getElementById('InputStartTime').value = stT.slice(0, 4) + '-' + stT.slice(4, 6) + '-' + stT.slice(-2)
-                document.getElementById('InputEndTime').value = edT.slice(0, 4) + '-' + edT.slice(4, 6) + '-' + edT.slice(-2)
+                var minTime = stT.slice(0, 4) + '-' + stT.slice(4, 6) + '-' + stT.slice(-2)
+                var maxTime = edT.slice(0, 4) + '-' + edT.slice(4, 6) + '-' + edT.slice(-2)
+                document.getElementById('InputStartTime').value = minTime
+                document.getElementById('InputEndTime').value = maxTime
+                document.getElementById('InputStartTime').min = minTime
+                document.getElementById('InputStartTime').max = maxTime
+                document.getElementById('InputEndTime').min = minTime
+                document.getElementById('InputEndTime').max = maxTime
+
                 dialog.showMessageBox({ type: 'info', title: '消息', message: '数据加载成功！' })
             })
         }
@@ -128,13 +135,19 @@ function SaveData(code) {
 function OnceProcess() {
     // 文件路径检查
     if (!CheckFilepath(originalDatapath)) {
-        dialog.showErrorBox('', '文件路径错误!')
+        dialog.showErrorBox('', '原始文件路径错误!')
         return
     }
 
     // 检查是否选择了时间
     if (selStTime == '' || selEdTime == '') {
         dialog.showErrorBox('', '请选择并确定时间窗口!')
+        return
+    }
+
+    // 保存路径检查
+    if (hotspots_filepath == '' || correlation_filepath == '') {
+        dialog.showErrorBox('', '文件保存路径错误!')
         return
     }
 
